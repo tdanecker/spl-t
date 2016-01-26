@@ -1,0 +1,146 @@
+html {
+	width: 100%;
+	height: 100%;
+	padding: 0px;
+	margin: 0px;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	overflow: hidden;
+	background-image: url("texture-990115.jpg");
+	background-size: cover;
+}
+body {
+	position: relative;
+	height: 100%;
+	min-width: 50vh;
+	max-width: 75vh;
+	width: 100%;
+	background-color: white;
+
+	display: flex;
+	flex-direction: column;
+
+	border: 17px solid;
+	border-color: #22292f;
+
+}
+body > div:nth-child(1) {
+	flex: 1 auto;
+	display: flex;
+	flex-direction: row;
+}
+body > div + div {
+	flex: 1 100%;
+	margin-bottom: -1px;
+	margin-right: -1px;
+}
+#score, #direction, #splits {
+	flex: 1 33%;
+	background-color: black;
+	border-style: solid;
+	border-width: 0px 0px 1px 0px;
+	border-color: white;
+	color: white;
+	padding: 2px;
+}
+#score::before {
+	content: "SCORE";
+	font-size: 0.7em;
+	vertical-align: text-top;
+	padding-right: 3px;
+}
+#direction {
+	flex: 1 34%;
+	text-align: center;
+}
+#splits {
+	text-align: right;
+}
+#splits::after {
+	content: "SPLITS";
+	font-size: 0.7em;
+	vertical-align: text-top;
+	padding-left: 3px;
+}
+#spl-t {
+	flex: 3 1 100%;
+	background-color: white;
+	position: relative;
+}
+.spl-t-area {
+	display: block;
+	position: absolute;
+	background-color: black;
+	padding: 0px;
+	border: none;
+	outline: none;
+	box-sizing: border-box;
+}
+
+#game-over {
+	position: absolute;
+	left: 0;
+	top: 0;
+	right: 0;
+	bottom: 0;
+	background-color: black;
+	color: white;
+	text-align: center;
+	padding-top: 45%;
+
+	display: none;
+}
+
+#game-over h2 {
+	font-size: 5vh;
+	text-transform: uppercase;
+	cursor: default;
+}
+
+#game-over h3 {
+	font-size: 4vh;
+	padding-top: 7vh;
+	cursor: default;
+}
+
+#game-over h3::before {
+	content: "Score: ";
+}
+
+#ranking {
+	position: absolute;
+	bottom: 10%;
+	left: 50%;
+	transform: translateX(-50%);
+	text-align: left;
+}
+#ranking span {
+	color: white;
+	display: block;
+	font-size: 2vh;
+	line-height: 4vh;
+	display: none;
+}
+
+#ranking span:nth-child(1)::before {
+	content: "1st   ";
+}
+#ranking span:nth-child(2)::before {
+	content: "2nd   ";
+}
+#ranking span:nth-child(3)::before {
+	content: "3rd   ";
+}
+#ranking span:nth-child(4)::before {
+	content: "4th   ";
+}
+#ranking span:nth-child(5)::before {
+	content: "5th   ";
+}
+
+div, p, button {
+	font-family: 'Droid Sans', sans-serif;
+	font-size: medium;
+	line-height: 1em;
+}

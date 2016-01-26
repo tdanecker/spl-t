@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="UTF-8">
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.2.0/jquery.min.js"></script>
+	<link href='https://fonts.googleapis.com/css?family=Droid+Sans' rel='stylesheet' type='text/css'>
+	<link rel="stylesheet" type="text/css" href="main.css">
+</head>
+<body>
+	<div>
+		<div id="score"></div><div id="direction"></div><div id="splits"></div>
+	</div>
+	<div id="spl-t"></div>
+	<div id="game-over">
+		<h2>Game Over</h2>
+		<h3 id="final-score">12345</h3>
+		<div id="ranking"></div>
+	</div>
+	<script>
+	"use strict";
+
+	$(window).error(function (msg, url, line) {
+		alert("Error in " + url + " line " + line + ": " + msg);
+	});
+
+
+	var field = new Array(8);
+	for (var x = 0; x < 16; x++)
+		field[x] = new Array(16);
+
+	var score = 0;
+	var nextDir = "horizontal";
+	var splits = 0;
+
+	var splt = $("#spl-t");
+	var scoreDiv = $("#score");
+	var nextDirDiv = $("#direction");
+	var splitsDiv = $("#splits");
+
+	scoreDiv.text(score);
+	nextDirDiv.text("—");
+	splitsDiv.text(splits);
+
+	function Area(x,y,width,height) {
+		this.x = x;
+		this.y = y;
+		this.width = width;
+		this.height = height;
+
+		this.isScoring = false;
+
+		for (var x = this.x; x < this.x + this.width; x++) {
+			for (var y = this.y; y < this.y + this.height; y++) {
+				field[x][y] = this;
+			}
+		}
+
+		this.button = $('<button/>', {
+			"class": "spl-t-area",
+			"click": function () {
+				if (this.split()) {
+					if (nextDir == "horizontal") {
+						nextDir = "vertical";
+						nextDirDiv.text("|");
+					}
+					else {
+						nextDir = "horizontal";
+						nextDirDiv.text("—");
+					}
+
+					splitsDiv.text(splits);
+
+					updateField();
+
+					score += countScoring() + 1;
+					scoreDiv.text(score);
+				}
+			}.bind(this)
+		});
+		this.setButtonPosition();
+
+		splt.append(this.button);
+
+		$(window).on("resize", function () {
+			console.log
+			for (var x = 0; x < 8; x++) {
+				for (var y = 0; y < 16; y++) {
+					var area = field[x][y];
+					if (area && area.x == x && area.y == y)
+						area.setButtonPosition();
+				}
+			}
+		});
+	}
+	Area.prototype.setButtonPosition = function () {
+		this.button.css({
+			left: this.x * (splt.width() + 1) / 8,
+			top: (16 - this.y - this.height) * (splt.height() + 1) / 16,
+			width: this.width * (splt.width() + 1) / 8 - 1,
+			height: this.height * (splt.height() + 1) / 16 - 1
+		});
+	}
+	Area.prototype.destroy = function () {
+		console.log("destroying " + this.x + ", " + this.y)
+		for (var x = this.x; x < this.x + this.width; x++) {
+			for (var y = this.y; y < this.y + this.height; y++) {
+				field[x][y] = null;
+			}
+		}
+		this.button.remove();
+	};
+	Area.prototype.split = function () {
+		if (nextDir == "horizontal" && this.height > 1) {
+			this.destroy();
+			
+			splits++;
+			new Area(this.x, this.y, this.width, this.height/2);
+			new Area(this.x, this.y + this.height/2, this.width, this.height/2);
+
+			return true;
+		}
+		else if (nextDir == "vertical" && this.width > 1) {
+			this.destroy();
+
+			splits++;
+			new Area(this.x, this.y, this.width/2, this.height);
+			new Area(this.x + this.width/2, this.y, this.width/2, this.height);
+			
+			return true;
+		}
+		return false;
+	};
+	Area.prototype.makeScoring = function () {
+		console.log("converting " + this.x + "," + this.y);
+		
+		this.button.css({
+			"background-color": "grey"
+		});
+
+		this.isScoring = true;
+
+		this.score = splits;
+		this.button.text(splits);
+	};
+	Area.prototype.updateScore = function () {
+		this.score--;
+		this.button.text(this.score);
+	};
+	Area.prototype.moveDown = function () {
+		var hasFallen = false;
+		while (canMoveDown.call(this)) {
+			this.y--;
+			for (var x = this.x; x < this.x + this.width; x++) {
+				field[x][this.y] = this;
+				field[x][this.y + this.height] = null;
+			}
+			hasFallen = true;
+		}
+		if (hasFallen) {
+			this.setButtonPosition();
+			if (this.isScoring) {
+				var points = Math.ceil(this.score / 2);
+				score += points;
+				this.score -= points;
+				if (this.score == 0) {
+					console.log(this.x + ", " + this.y + " reached score 0");
+					this.destroy();
+					score += this.width * this.height + 1;
+				}
+				else
+					this.button.text(this.score);
+			}
+		}
+
+		function canMoveDown() {
+			if (this.y == 0)
+				return false;
+
+			for (var x = this.x; x < this.x + this.width; x++) {
+				if (field[x][this.y - 1])
+					return false;
+			}
+
+			return true;
+		}
+	};
+
+	new Area(0,0,8,16);
+
+	function countScoring() {
+		var count = 0;
+		for (var x = 0; x < 8; x++) {
+			for (var y = 0; y < 16; y++) {
+				var area = field[x][y];
+				if (area && area.isScoring && area.x == x && area.y == y) {
+					count++;
+				}
+			}
+		}
+		return count;
+	}
+
+	function isFree(x, y, width, height) {
+		for (var x2 = x; x2 < x + width; x2++) {
+			for (var y2 = y; y2 < y + height; y2++) {
+				if (field[x2][y2])
+					return false;
+			}
+		}
+		return true;
+	}
+
+	function updateField() {
+		console.log("calling update-field");
+
+		for (var x = 0; x < 8; x++) {
+			for (var y = 0; y < 16; y++) {
+				var area = field[x][y];
+				if (area && area.isScoring && area.x == x && area.y == y)
+					area.updateScore();
+			}
+		}
+
+		checkScoring();
+
+		var areasDestroyed;
+		do {
+			areasDestroyed = false;
+			for (var x = 0; x < 8; x++) {
+				for (var y = 0; y < 16; y++) {
+					var area = field[x][y];
+					if (area && area.isScoring && area.score == 0) {
+						score += area.width * area.height + 1;
+						area.destroy();
+						areasDestroyed = true;
+					}
+				}
+			}
+
+			for (var y = 0; y < 16; y++) {
+				for (var x = 0; x < 8; x++) {
+					var area = field[x][y];
+					if (area) {
+						area.moveDown();
+					}
+				}
+			}
+
+			for (var x = 0; x < 8; x++) {
+				if (isFree(x, 14, 2, 2)) {
+					var height;
+					for (height = 2; height <= 8 && isFree(x, 16 - 2*height, 2, height); height *= 2)
+						;
+					var width;
+					for (width = 2; width <= 8 - x - width && isFree(x + width, 16 - height, width, height); width *= 2)
+						;
+
+					var y;
+					for (y = 16 - height; y > 0 && isFree(x, y-1, width, 1); y--)
+						;
+
+					console.log ("filling area " + x + ", " + y + " to " + x+width-1 + ", " + y+height-1);
+					new Area(x, y, width, height);
+				}
+			}
+
+			checkScoring();
+		}
+		while (areasDestroyed);
+
+		checkGameOver();
+	}
+
+	function checkScoring() {
+		for (var x = 0; x < 8; x++) {
+			for (var y = 0; y < 16; y++) {
+				var area = field[x][y];
+				if (area && !area.isScoring && area.x == x && area.y == y &&
+					area.x + area.width <= 8 && area.y + area.height <= 16 &&
+					field[x + area.width][y] && !field[x + area.width][y].isScoring &&
+					field[x + area.width][y].width == area.width && field[x + area.width][y].height == area.height &&
+					field[x][y + area.height] && !field[x][y + area.height].isScoring &&
+					field[x][y + area.height].width == area.width && field[x][y + area.height].height == area.height &&
+					field[x + area.width][y + area.height] && !field[x + area.width][y + area.height].isScoring &&
+					field[x + area.width][y + area.height].width == area.width && field[x + area.width][y + area.height].height == area.height) {
+
+					area.makeScoring();
+					field[x + area.width][y].makeScoring();
+					field[x][y + area.height].makeScoring();
+					field[x + area.width][y + area.height].makeScoring();
+				}
+			}
+		}
+	}
+
+	function checkGameOver() {
+		var hor = 0, ver = 0;
+		for (var x = 0; x < 8; x++) {
+			for (var y = 0; y < 16; y++) {
+				var area = field[x][y];
+				if (area && !area.isScoring) {
+					if (area.height > 1)
+						hor++;
+					if (area.width > 1)
+						ver++;
+				}
+			}
+		}
+
+		if (nextDir == "horizontal" && hor == 0 || nextDir == "vertical" && ver == 0) {
+			$("#final-score").text(score);
+
+			var scores = localStorage.getItem("scores");
+			if (scores)
+				scores = JSON.parse(scores);
+			else
+				scores = [];
+
+			scores.push(score);
+			scores.sort();
+			scores.reverse();
+			scores = scores.slice(0,5);
+
+			scores.forEach(function (score) {
+				$("#ranking").append($("<span/>", {
+					text: score
+				}));
+			});
+
+			localStorage.setItem("scores", JSON.stringify(scores.slice(0,5)));
+
+			var gameOver = $("#game-over");
+			gameOver.show();
+			gameOver.on("click", function () {
+				for (var x = 0; x < 8; x++) {
+					for (var y = 0; y < 16; y++) {
+						var area = field[x][y];
+						if (area)
+							area.destroy();
+					}
+				}
+				score = 0;
+				nextDir = "horizontal";
+				splits = 0;
+				scoreDiv.text(score);
+				nextDirDiv.text("—");
+				splitsDiv.text(splits);
+
+				new Area(0, 0, 8, 16);
+
+				gameOver.hide();
+			});
+		}
+	}
+	</script>
+</body>
+</html>
